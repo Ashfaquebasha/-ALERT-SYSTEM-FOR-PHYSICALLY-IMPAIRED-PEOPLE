@@ -1,0 +1,112 @@
+#include<Wire.h>
+#include<math.h>
+#include <SoftwareSerial.h>
+#include <LiquidCrystal.h>
+
+int buzzer=8;
+int VCC=9;
+int GND=10;
+ 
+const int MPU_addr=0x68;
+int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
+const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+ 
+double x;
+double y;
+double z;
+ 
+void setup(){
+Wire.begin();
+Wire.beginTransmission(MPU_addr);
+Wire.write(0x6B);
+Wire.write(0);
+Wire.endTransmission(true);
+lcd.begin(16,2);
+Serial.begin(9600);
+
+     pinMode(buzzer,OUTPUT);
+     pinMode(VCC,OUTPUT);
+     pinMode(GND,OUTPUT);
+     digitalWrite(GND,LOW);
+     digitalWrite(VCC,HIGH);
+}
+void loop(){
+Wire.beginTransmission(MPU_addr);
+Wire.write(0x3B);
+Wire.endTransmission(false);
+Wire.requestFrom(MPU_addr,14,true);
+AcX=Wire.read()<<8|Wire.read();
+AcY=Wire.read()<<8|Wire.read();
+AcZ=Wire.read()<<8|Wire.read();
+
+ float x=AcX,y=AcY,z=AcZ;
+float pitch = atan(x/sqrt((y*y) + (z*z)));
+
+
+x = pitch * (180.0/3.14);
+float roll = atan(y/sqrt((x*x) + (z*z)));
+y = roll * (180.0/3.14) ;
+float yay=atan(z/sqrt(x*x)+(y*y));
+z=yay*(180/3.14);
+
+Serial.println(x);
+Serial.println(y);
+Serial.println(z);
+lcd.setCursor(0, 1);
+lcd.print("helping the need");
+if(x<90&&x>30)
+{
+  Serial.println("I WANT WATER");
+  lcd.clear();
+  lcd.setCursor(2, 0);
+  lcd.print("I WANT WATER");
+  digitalWrite(buzzer,HIGH);
+  delay(100);
+  digitalWrite(buzzer,LOW);
+}
+else if(x>-90&&x<-50)
+
+  {
+  Serial.println("I WANT FOOD");
+  lcd.clear();
+  lcd.setCursor(2, 0);
+  lcd.print("I WANT FOOD");
+  digitalWrite(buzzer,HIGH);
+  delay(100);
+  digitalWrite(buzzer,LOW);  
+  }
+else if(y<90&&y>30)
+{
+  Serial.println("I WANT WASHROOM");
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("I WANT WASHROOM");
+  digitalWrite(buzzer,HIGH);
+  delay(1000);
+  digitalWrite(buzzer,LOW);
+}
+else if(y>-90&&y<-30)
+{
+  Serial.println("EMERGENCY");
+  lcd.clear();
+  lcd.setCursor(3, 0);
+  lcd.print("EMERGENCY");
+  digitalWrite(buzzer,HIGH);
+}
+  else 
+  {
+
+    Serial.println('n');
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("ALERT SYSTEM FOR");
+    lcd.setCursor(0, 1);
+    lcd.print("DISABBLED PEOPLE");
+    digitalWrite(buzzer,LOW);
+  }
+
+delay(1000);
+
+}
